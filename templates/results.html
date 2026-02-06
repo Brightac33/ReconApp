@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recon Results - {{ data.domain }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Recon Results</h1>
+            <a href="/" class="btn btn-secondary">New Scan</a>
+        </header>
+
+        <div class="results-header">
+            <div class="meta-info">
+                <div><strong>Domain:</strong> {{ data.domain }}</div>
+                <div><strong>Run ID:</strong> {{ data.run_id }}</div>
+                <div><strong>Time:</strong> {{ data.timestamp }}</div>
+            </div>
+
+            <div class="export-actions">
+                <form action="/export" method="POST" target="_blank" style="display:inline;">
+                    <input type="hidden" name="data" value="{{ data_json }}">
+                    <input type="hidden" name="format" value="json">
+                    <button type="submit" class="btn btn-secondary">JSON</button>
+                </form>
+                <form action="/export" method="POST" target="_blank" style="display:inline;">
+                    <input type="hidden" name="data" value="{{ data_json }}">
+                    <input type="hidden" name="format" value="md">
+                    <button type="submit" class="btn btn-secondary">Markdown</button>
+                </form>
+                <form action="/export" method="POST" target="_blank" style="display:inline;">
+                    <input type="hidden" name="data" value="{{ data_json }}">
+                    <input type="hidden" name="format" value="pdf">
+                    <button type="submit" class="btn btn-secondary">PDF</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- DNS Section -->
+        <div class="module-section">
+            <div class="module-title">DNS Enumeration</div>
+            <p class="help-text">
+                <strong>What is this?</strong> DNS (Domain Name System) is the phonebook of the internet.
+                It translates human-readable domain names (like google.com) into IP addresses computers use to connect.
+            </p>
+            {% if data.dns.error %}
+            <div class="error-msg">{{ data.dns.error }}</div>
+            {% else %}
+            <div class="data-grid">
+                <div class="data-item">
+                    <label>SPF Policy</label>
+                    <div class="data-value">
+                        {% if data.dns.spf_present %}
+                        <span class="badge badge-success">DETECTED</span>
+                        {% else %}
+                        <span class="badge badge-warning">NOT FOUND</span>
+                        {% endif %}
+                    </div>
+                    <div class="mini-help">Prevents email spoofing by listing authorized senders.</div>
+                </div>
+                <div class="data-item">
+                    <label>DMARC Policy</label>
+                    <div class="data-value">
+                        {% if data.dns.dmarc_present %}
+                        <span class="badge badge-success">DETECTED</span>
+                        {% else %}
+                        <span class="badge badge-warning">NOT FOUND</span>
+                        {% endif %}
+                    </div>
+                    <div class="mini-help">Instructs email providers how to handle failed authentication.</div>
+                </div>
+            </div>
+
+            <div class="sub-section">
+                <div class="sub-title">Records</div>
+                <div style="display: grid; gap: 1rem;">
+                    {% for rtype in ['A', 'AAAA', 'MX', 'NS', 'TXT'] %}
+                    {% if data.dns[rtype] %}
+                    <div>
+                        <strong>{{ rtype }}:</strong>
+                        {% if rtype == 'A' %} <span class="type-desc">(IPv4 Address)</span>
+                        {% elif rtype == 'AAAA' %} <span class="type-desc">(IPv6 Address)</span>
+                        {% elif rtype == 'MX' %} <span class="type-desc">(Mail Servers)</span>
+                        {% elif rtype == 'NS' %} <span class="type-desc">(Name Servers)</span>
+                        {% elif rtype == 'TXT' %} <span class="type-desc">(Text/Configuration)</span>
+                        {% endif %}
+                        <ul>
+                            {% for r in data.dns[rtype] %}
+                            <li style="font-family: monospace; font-size: 0.9rem;">{{ r }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- TLS Section -->
+        <div class="module-section">
+            <div class="module-title">TLS Certificate</div>
+            <p class="help-text">
+                <strong>What is this?</strong> TLS certificates encrypt the connection between your browser and the
+                website.
+                They also verify the identity of the website owner.
+            </p>
+            {% if data.tls.error %}
+            <div class="error-msg">{{ data.tls.error }}</div>
+            {% else %}
+            {% if data.tls.is_expired %}
+            <div class="error-msg" style="margin-bottom: 1rem;">Certificate is EXPIRED</div>
+            {% elif data.tls.expiring_soon %}
+            <div class="error-msg"
+                style="background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; margin-bottom: 1rem;">Certificate
+                expires soon</div>
+            {% endif %}
+
+            <div class="data-grid">
+                <div class="data-item">
+                    <label>Common Name</label>
+                    <div class="data-value">{{ data.tls.subject.commonName }}</div>
+                    <div class="mini-help">The primary domain this certificate protects.</div>
+                </div>
+                <div class="data-item">
+                    <label>Issuer</label>
+                    <div class="data-value">{{ data.tls.issuer.commonName }}</div>
+                    <div class="mini-help">The authority that verified and signed this certificate.</div>
+                </div>
+                <div class="data-item">
+                    <label>Valid From</label>
+                    <div class="data-value">{{ data.tls.notBefore }}</div>
+                </div>
+                <div class="data-item">
+                    <label>Valid Until</label>
+                    <div class="data-value">{{ data.tls.notAfter }}</div>
+                </div>
+                <div class="data-item">
+                    <label>Days Remaining</label>
+                    <div class="data-value">{{ data.tls.days_to_expire }} days</div>
+                </div>
+            </div>
+
+            {% if data.tls.subjectAltName %}
+            <div class="sub-section">
+                <div class="sub-title">Subject Alternative Names</div>
+                <div class="mini-help" style="margin-bottom: 0.5rem;">Other domains also covered by this single
+                    certificate.</div>
+                <div style="max-height: 100px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
+                    {% for san in data.tls.subjectAltName %}
+                    <div>{{ san[1] }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- WHOIS Section -->
+        <div class="module-section">
+            <div class="module-title">WHOIS Information</div>
+            <p class="help-text">
+                <strong>What is this?</strong> WHOIS is a public record of who owns a domain name and how to contact
+                them.
+                Privacy services often redact this information.
+            </p>
+            {% if data.whois.error %}
+            <div class="error-msg">{{ data.whois.error }}</div>
+            {% else %}
+            <div class="data-grid">
+                <div class="data-item">
+                    <label>Registrar</label>
+                    <div class="data-value">{{ data.whois.registrar }}</div>
+                    <div class="mini-help">The company where the domain name was purchased.</div>
+                </div>
+                <div class="data-item">
+                    <label>Organization</label>
+                    <div class="data-value">{{ data.whois.org or 'N/A' }}</div>
+                </div>
+                <div class="data-item">
+                    <label>Country</label>
+                    <div class="data-value">{{ data.whois.country or 'N/A' }}</div>
+                </div>
+                <div class="data-item">
+                    <label>Creation Date</label>
+                    <div class="data-value">{{ data.whois.creation_date }}</div>
+                </div>
+                <div class="data-item">
+                    <label>Expiration Date</label>
+                    <div class="data-value">{{ data.whois.expiration_date }}</div>
+                </div>
+                <div class="data-item">
+                    <label>Name Servers</label>
+                    <div class="data-value" style="font-size: 0.85rem;">
+                        {% if data.whois.name_servers %}
+                        {% if data.whois.name_servers is string %}
+                        {{ data.whois.name_servers }}
+                        {% else %}
+                        {{ data.whois.name_servers | join(', ') }}
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="sub-section">
+                <details>
+                    <summary style="cursor: pointer; color: var(--accent-color);">Show Raw WHOIS Data</summary>
+                    <div class="raw-content">{{ data.whois.raw }}</div>
+                </details>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReconApp - Passive OSINT</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ReconApp</h1>
+            <p class="subtitle">Passive OSINT & Domain Reconnaissance</p>
+        </header>
+
+        <div class="search-box">
+            <form action="/scan" method="POST">
+                
+                <div class="input-group">
+                    <label for="domain">Target Domain</label>
+                    <input type="text" id="domain" name="domain" placeholder="example.com" required 
+                           pattern="^(?!https?:\/\/)(?!www\.)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                           title="Please enter a valid domain (e.g., example.com) without http/https or www prefix">
+                    <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem;">
+                        Enter a domain only (no protocols, IPs, or paths).
+                    </p>
+                </div>
+
+                <div class="input-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="ethics" name="ethics" required>
+                        <label for="ethics" style="font-weight: 400; font-size: 0.95rem;">
+                            I understand that ReconApp performs passive OSINT only and I agree to use this tool ethically and lawfully.
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Start Reconnaissance</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
